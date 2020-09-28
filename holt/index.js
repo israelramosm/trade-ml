@@ -1,8 +1,8 @@
 
 const axios = require("axios");
 const url = "https://query1.finance.yahoo.com/v7/finance/download/%5EGSPC?period1=946684800&period2=1601164800&interval=1d&events=history";
-var alfa = 0.1;
-var beta = 0.4;
+const alfa = 0.2;
+const beta = 0.4;
 // Day = 86400
 // day 27 = 1601164800
 var historicalData;
@@ -18,7 +18,7 @@ var historicalData;
     
   });*/
 
-historicalData =  /*'2020-01-02,3244.669922,3258.139893,3235.530029,3257.850098,3257.850098,3458250000\n' +
+historicalData =  '2020-01-02,3244.669922,3258.139893,3235.530029,3257.850098,3257.850098,3458250000\n' +
 '2020-01-03,3226.360107,3246.149902,3222.340088,3234.850098,3234.850098,3461290000\n' +
 '2020-01-06,3217.550049,3246.840088,3214.639893,3246.280029,3246.280029,3674070000\n' +
 '2020-01-07,3241.860107,3244.909912,3232.429932,3237.179932,3237.179932,3420380000\n' +
@@ -196,14 +196,14 @@ historicalData =  /*'2020-01-02,3244.669922,3258.139893,3235.530029,3257.850098,
 '2020-09-11,3352.699951,3368.949951,3310.469971,3340.969971,3340.969971,3704450000\n' +
 '2020-09-14,3363.560059,3402.929932,3363.560059,3383.540039,3383.540039,3832130000\n' +
 '2020-09-15,3407.729980,3419.479980,3389.250000,3401.199951,3401.199951,4051460000\n' +
-'2020-09-16,3411.229980,3428.919922,3384.449951,3385.489990,3385.489990,4710030000\n' +*/
+'2020-09-16,3411.229980,3428.919922,3384.449951,3385.489990,3385.489990,4710030000\n' +
 '2020-09-17,3346.860107,3375.169922,3328.820068,3357.010010,3357.010010,4371940000\n' +
 '2020-09-18,3357.379883,3362.270020,3292.399902,3319.469971,3319.469971,7068700000\n' +
 '2020-09-21,3285.570068,3285.570068,3229.100098,3281.060059,3281.060059,4828350000\n' +
 '2020-09-22,3295.750000,3320.310059,3270.949951,3315.570068,3315.570068,3963300000\n' +
 '2020-09-23,3320.110107,3323.350098,3232.570068,3236.919922,3236.919922,4364500000\n' +
 '2020-09-24,3226.139893,3278.699951,3209.449951,3246.590088,3246.590088,4599470000\n' +
-'2020-09-25,3236.659912,3306.879883,3228.439941,3298.459961,3298.459961,3792220000';
+'2020-09-25,3236.659912,3306.879883,3228.439941,3298.459961,3298.459961,3792220000\n';
 
 var dataResponsePerDay = String(historicalData).split("\n");
 
@@ -217,30 +217,45 @@ holt.push(holtObject);
 dataResponsePerDay.forEach((element, index) => {
     var data = element.split(",");
     //holtObject = {};
+    console.log(index);
+    var date = data[0];
+    var close = Number(data[4]);
+    var open = Number(data[1]);
+    var closeAnterior;
+    var pronosticoAnterior;
+    var tendenciaAnterior;
+    var pronosticoTendenciaAnterior;
+    console.log("Date                   : " +  date);
+    console.log("Open                   : " +  open);
+    console.log("Close                  : " + close);
     if(index === 0) {
-        holtObject.date = data[0];
-        holtObject.pronostico = Number(data[4]);
-        holtObject.tendencia = Number(data[4]) - Number(data[1]);
-        holtObject.proten = Number(holtObject.pronostico) + Number(holtObject.tendencia);
+        holtObject.date = date;
+        holtObject.close = close;
+        holtObject.pronostico = close;
+        holtObject.tendencia = close - open;
+        holtObject.proten = holtObject.pronostico + holtObject.tendencia;
 
-        console.log();
-        console.log(holtObject.proten);
+        
+        console.log("Pronostico actual      : " + holtObject.pronostico);
+        console.log("Pronostico tendencia   : " + holtObject.tendencia);
         console.log();
 
     } else {
+        pronosticoAnterior = holt[index-1].pronostico;
+        tendenciaAnterior = holt[index-1].tendencia;
+        pronosticoTendenciaAnterior = holt[index-1].proten;
+        closeAnterior = holt[index-1].close;
 
-        holtObject.date = data[0];
-        holtObject.pronostico = (alfa * holt[index-1].pronostico) + ((1 - alfa) * holt[index-1].proten);
-        holtObject.tendencia = (beta * (holtObject.pronostico - holt[index-1].pronostico)) + (1 - beta) * holt[index-1].tendencia;
-        holtObject.proten = holt[index-1].pronostico + holt[index-1].tendencia;
+        holtObject.date = date;
+        holtObject.close = close;
+        holtObject.pronostico = (alfa * closeAnterior) + ((1 - alfa) * pronosticoTendenciaAnterior);
+        holtObject.tendencia = (beta) * (holtObject.pronostico - pronosticoAnterior) + ((1 - beta) * tendenciaAnterior);
+        holtObject.proten = holtObject.pronostico + holtObject.tendencia;
 
-        console.log(alfa);
-        console.log(holt[index-1].pronostico);
-        console.log((1 - alfa));
-        console.log(holt[index-1].proten);
-
-        console.log();
-        console.log(holtObject.pronostico);
+        console.log("Pronostico anterior    : " + pronosticoAnterior);
+        console.log("Pronostico actual      : " + holtObject.pronostico);
+        console.log("Pronostico tendencia   : " + holtObject.tendencia);
+        console.log("Pronostico + Tendencia : " +  holtObject.proten);
         console.log();
     }
     
